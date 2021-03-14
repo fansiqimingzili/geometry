@@ -19,16 +19,16 @@ namespace geometry {
         Rect();
         ~Rect() = default;
         //float make(0, 0, w, h)
-        static Rect CreateRectFromWH(float w, float h) {
+        Rect CreateRectFromWH(float w, float h) {
             return  Rect{ 0, 0, w, h };
         }
 
-        static Rect CreateRectFromLTRB(float l, float t, float r, float b) {
+        Rect CreateRectFromLTRB(float l, float t, float r, float b) {
             return Rect{ l, t, r, b };
         }
 
 
-        static Rect CreateRectFromXYWH(float x, float y, float w, float h) {
+        Rect CreateRectFromXYWH(float x, float y, float w, float h) {
             return Rect{ x, y, x + w, y + h };
         }
 
@@ -82,15 +82,13 @@ namespace geometry {
 
         void SetXYWH(float x, float y, float width, float height);
 
-        void ToQuad(Point quad[4]) const;
-
         Rect MakeOffset(float dx, float dy) const;
 
         //位锟斤拷
-        void Offset(float dx, float dy);
+        Rect& Offset(float dx, float dy);
 
         //锟斤拷位锟斤拷
-        void Offset(const Point& pt);
+        Rect& Offset(const Point& pt);
 
         static bool Intersects(float al, float at, float ar, float ab,
             float bl, float bt, float br, float bb);
@@ -108,7 +106,7 @@ namespace geometry {
 
         Rect MakeSorted() const;
 
-        Rect ExpandBounds(const Point& p);
+        Rect& ExpandBounds(const Point& p);
     private:
         float left_;   //!< smaller x-axis bounds
         float top_;    //!< smaller y-axis bounds

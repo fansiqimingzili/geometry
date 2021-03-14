@@ -9,7 +9,7 @@ namespace geometry {
 
 	}
 
-	void Path::MakeFromString(const char* d_str) {
+	Path& Path::MakeFromString(const char* d_str) {
 
 		const char* s = d_str;
 		char cmd = '\0';						//dµÄÊ××Ö·û
@@ -43,9 +43,10 @@ namespace geometry {
 			if (!FromSVGString(cmd, arg, cnum, c, lastc))
 				return;
 		}
+		return *this;
 	}
 
-	Path Path::MakeRect(float x,float y,float width,float height,float rx,float ry) {
+	Path& Path::MakeRect(float x,float y,float width,float height,float rx,float ry) {
 		ResetPath();
 		if (rx < 0.00001f || ry < 0.0001f) {
 			MoveTo(x, y);
@@ -68,7 +69,7 @@ namespace geometry {
 		return *this;
 	}
 
-	Path Path::MakeEllipse(float cx, float cy, float ra, float rb) {
+	Path& Path::MakeEllipse(float cx, float cy, float ra, float rb) {
 		ResetPath();
 		MoveTo(cx + ra, cy);
 		CubicBeizerTo(cx + ra, cy + rb * KAPPA90, cx + ra * KAPPA90, cy + rb, cx, cy + rb);
@@ -78,7 +79,7 @@ namespace geometry {
 		return *this;
 	}
 
-	Path Path::MakeCircle(float center_x, float center_y, float radius) {
+	Path& Path::MakeCircle(float center_x, float center_y, float radius) {
 		ResetPath();
 		MoveTo(center_x + radius, center_y);
 		CubicBeizerTo(center_x + radius, center_y + radius * KAPPA90, center_x + radius * KAPPA90, center_y + radius, center_x, center_y + radius);
@@ -88,7 +89,7 @@ namespace geometry {
 		return *this;
 	}
 
-	Path Path::MakeLine(const Point& a, const Point& b) {
+	Path& Path::MakeLine(const Point& a, const Point& b) {
 		ResetPath();
 		MoveTo(a.X(),a.Y());
 		LineTo(b.X(), b.Y());

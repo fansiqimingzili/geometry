@@ -7,7 +7,6 @@
 
 namespace geometry {
     class Line {
-
     public:
         Line(float x1,float y1, float x2, float y2);
         Line(Point p1, Point p2);
@@ -24,13 +23,6 @@ namespace geometry {
 
         bool operator!=(const Line& line) {
             return x1_!= line.x1_ ||y1_ != line.y1_ || x2_ != line.x2_ || y2_ != line.y2_;
-        }
-
-        friend bool operator==(const Line& a, const Line& b) {
-            return a.x1_ == b.x1_ && a.y1_ == b.y1_&& a.x2_ == b.x2_ && a.y2_ == b.y2_;
-        };
-        friend bool operator!=(const Line& a, const Line& b) {
-            return a.x1_ != b.x1_ || a.y1_ != b.y1_|| a.x2_ != b.x2_ || a.y2_ != b.y2_;
         }
 
         Line operator*(float scale) const { return { x1_ * scale, y1_ * scale, x2_ * scale, y2_ * scale }; }
@@ -90,7 +82,7 @@ namespace geometry {
         //œ‡Ωª
         bool Intersects(const Line& r) const;
 
-        static bool Intersects(const Line& a, const Line& b);
+        bool Intersects(const Line& a, const Line& b);
 
         Rect ComputeBounds() const;
 

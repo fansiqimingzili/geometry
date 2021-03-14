@@ -39,26 +39,12 @@ namespace geometry {
         }
     }
 
-    //bool Line::Intersects(float ax1, float ay1, float ax2, float ay2,
-    //    float bx1, float by1, float bx2, float by2) {
-
-    //}
-
-    //œ‡Ωª
-    //bool Line::Intersects(const Line& r) const {
-
-    //}
-
-    //bool Line::Intersects(const Line& a, const Line& b) {
-
-    //}
-
     Rect Line::ComputeBounds() const {
         float L = fmax(x1_, x2_);
         float R = fmin(x1_, x2_);
         float T = fmax(y1_, y2_);
         float B = fmin(y1_, y2_);
-        return Rect(L+0.5, R-0.5, T+0.5, B-0.5);
+        return Rect(L, R, T, B);
     }
 
     bool Line::ContainsPoint(float x, float y) const {

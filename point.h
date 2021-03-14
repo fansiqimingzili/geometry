@@ -16,7 +16,7 @@ namespace geometry {
         }
 
         Point Make(float x, float y) {
-            return { x_, y_ };
+            return {x, y};
         };
 
         bool operator==(const Point& point) {
@@ -27,43 +27,39 @@ namespace geometry {
             return x_ != point.x_ ||y_ != point.y_;
         }
 
-        //Point& operator+(const Point& point) {
-        //    return { x_ + point.x_, y_ + point.y_ };
-        //}
-
-        //Point& operator-(const Point& point) {
-        //    return { x_-point.x_, y_ -point.y_ };
-        //}
-
         bool Equals(float x, float y) const {return x_ == x && y_ == y;}
 
-        friend bool operator==(const Point& a, const Point& b) {
-            return a.x_ == b.x_ && a.y_ == b.y_;
-        };
-        friend bool operator!=(const Point& a, const Point& b) {
-            return a.x_ != b.x_ || a.y_ != b.y_;
-        }
         friend Point operator+(const Point& a, const Point& b) {
             return { a.x_ + b.x_, a.y_ + b.y_ };
         }
+
         friend Point operator-(const Point& a, const Point& b) {
             return { a.x_ - b.x_, a.y_ - b.y_ };
         }
+
         friend float operator*(const Point& a, const Point& b) {
             return a.x_ * b.x_ + a.y_ * b.y_;
         }
 
-        void operator+=(const Point& other) {
+        Point& operator+=(const Point& other) {
             x_ += other.x_;
             y_ += other.y_;
+            return *this;
         }
 
-        void operator-=(const Point& other) {
+        Point& operator-=(const Point& other) {
             x_ -= other.x_;
             y_ -= other.y_;
+            return *this;
         }
 
         Point operator*(float scale) const {return { x_ * scale, y_ * scale }; }
+
+        Point& Scale(float value) {
+            x_ *= value;
+            y_ *= value;
+            return *this;
+        }
 
         void Set(float x, float y) {
             x_ = x;
@@ -87,26 +83,22 @@ namespace geometry {
             y_ += y;
         }
 
-        void Scale(float value) {
-            x_ *= value;
-            y_ *= value;
-        }
-
-        //¹éÒ»»¯
-        void Normalize() {
+        //gui yi
+        Point& Normalize() {
             float lensq = x_ * x_ + y_ * y_;
             if (lensq > 0.0f) {
                 float one_over_len = 1.0f / sqrt(lensq);
                 x_ *= one_over_len;
                 y_ *= one_over_len;
             }
+            return *this;
         }
         //absin
         static float Cross(Point& a, Point& b) { return  a.x_ * b.y_ - a.y_ * b.x_;};
         static float Cross(float x1, float y1, float x2, float y2) { return  x1 * y2 - y1*x2; };
         //abcos
-        static float Dot(Point& a, Point& b) { return  a.x_ * b.x_ - a.y_ * b.y_; };
-        static float Dot(float x1, float y1, float x2, float y2) { return  x1 * x2 - y1* y2; };
+        static float Dot(Point& a, Point& b) { return  a.x_ * b.x_ + a.y_ * b.y_; };
+        static float Dot(float x1, float y1, float x2, float y2) { return  x1 * x2 + y1* y2; };
     private:
         float x_=0.0f;
         float y_=0.0f;

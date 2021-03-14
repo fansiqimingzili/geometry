@@ -6,14 +6,12 @@
 #include <map>
 #include <iostream>
 
+#include "define.h"
 #include "point.h"
 #include "rect.h"
 #include "utils.h"
 #include "parse.h"
 
-#define PI (3.14159265358979323846264338327f)
-#define KAPPA90 (0.5522847493f)	
-#define SVG_CHECK(_condition, _format, ...)
 namespace geometry {
 	class Path
 	{
@@ -37,19 +35,19 @@ namespace geometry {
 
 		void Set(const Path& path);
 
-		void MakeFromString(const char* d_str);
+		Path& MakeFromString(const char* d_str);
 
 		std::vector<Point> Approximate(float acceptable_error);
 
 		Rect ComputeBounds() const;
 
-		Path MakeRect(float x, float y, float width, float height, float rx=0, float ry=0);
+		Path& MakeRect(float x, float y, float width, float height, float rx=0, float ry=0);
 
-		Path MakeEllipse(float cx,float cy,float ra,float rb);
+		Path& MakeEllipse(float cx,float cy,float ra,float rb);
 
-		Path MakeCircle(float center_x, float center_y, float radius);
+		Path& MakeCircle(float center_x, float center_y, float radius);
 
-		Path MakeLine(const Point& a, const Point& b);
+		Path& MakeLine(const Point& a, const Point& b);
 
 		void MoveTo(Point& pt);
 		void MoveTo( float x,float y);

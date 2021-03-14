@@ -8,20 +8,7 @@ namespace geometry {
     Rect::Rect() : left_(0.0f), top_(0.0f), right_(0.0f), bottom_(0.0f) {
 
     }
-
-    static Rect CreateRectFromWH(float w, float h) {
-        return  Rect{ 0, 0, w, h };
-    }
     
-    static Rect CreateRectFromLTRB(float l, float t, float r, float b) {
-        return Rect{ l, t, r, b };
-    }
-
-
-    static Rect CreateRectFromXYWH(float x, float y, float w, float h) {
-        return Rect{ x, y, x + w, y + h };
-    }
-
     bool Rect::IsEmpty() const {
         return !(left_ < right_&& top_ < bottom_);
     }
@@ -119,28 +106,22 @@ namespace geometry {
         bottom_ = y + height;
     }
 
-    void  Rect::ToQuad(Point quad[4]) const {
-        quad[0].Set(left_,top_);
-        quad[1].Set(right_,top_);
-        quad[2].Set(right_, bottom_);
-        quad[3].Set(left_, bottom_);
-    }
-
     Rect Rect::MakeOffset(float dx, float dy) const {
-        return CreateRectFromLTRB(left_ + dx, top_ + dy, right_ + dx, bottom_ + dy);
+        return Rect(left_ + dx, top_ + dy, right_ + dx, bottom_ + dy);
     }
 
     //位锟斤拷
-    void  Rect::Offset(float dx,float dy) {
+    Rect& Rect::Offset(float dx,float dy) {
         left_ += dx;
         top_ += dy;
         right_ += dx;
         bottom_ += dy;
+        return *this;
     }
 
     //锟斤拷位锟斤拷
-    void  Rect::Offset(const Point& pt) {
-        this->Offset(pt.X(), pt.Y());
+    Rect& Rect::Offset(const Point& pt) {
+        return this->Offset(pt.X(), pt.Y());
     }
 
     //锟洁交
@@ -185,10 +166,10 @@ namespace geometry {
     }
 
     Rect Rect::MakeSorted() const {
-        return CreateRectFromLTRB(fmin(left_, right_), fmin(top_, bottom_),
+        return Rect(fmin(left_, right_), fmin(top_, bottom_),
             fmax(left_, right_), fmax(top_, bottom_));
     }
-    Rect Rect::ExpandBounds(const Point& p) {
+    Rect& Rect::ExpandBounds(const Point& p) {
         float L = fmin(left_, p.X());
         float T = fmin(top_, p.Y());
         float R = fmax(right_, p.X());

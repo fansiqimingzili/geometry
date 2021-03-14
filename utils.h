@@ -142,89 +142,89 @@ namespace geometry {
 	 	}
 	 	return triangles;
 	 }
-	 //凹多边形三角剖分
-	static std::vector<int> PolygonTriangleDivide(std::vector<geometry::Point> vertice_points, std::vector<int> indexes)
-	 {
-	 	int len = vertice_points.size();
-	 	if (len <= 3)
-	 		return ConvexPolygonDivide(vertice_points, indexes);
-	 	int index = 0;
-	 	std::vector<int> covex_index;
-	 	bool IsCovexPolygon = true;//判断多边形是否是凸多边形
-	 	for (index = 0; index < len; index++)
-	 	{
-	 		std::vector<geometry::Point> polygon;
-	 		polygon = vertice_points;
-	 		std::vector <geometry::Point>::iterator iter = polygon.begin() + index;
-	 		polygon.erase(iter);
-	 		if (IsPointInsidePolygon(vertice_points[index], polygon))
-	 		{
-	 			IsCovexPolygon = false;
-	 			break;
-	 		}
-	 		else
-	 		{
-	 			covex_index.push_back(index);
-	 		}
-	 	}
+	//  //凹多边形三角剖分
+	// static std::vector<int> PolygonTriangleDivide(std::vector<geometry::Point> vertice_points, std::vector<int> indexes)
+	//  {
+	//  	int len = vertice_points.size();
+	//  	if (len <= 3)
+	//  		return ConvexPolygonDivide(vertice_points, indexes);
+	//  	int index = 0;
+	//  	std::vector<int> covex_index;
+	//  	bool IsCovexPolygon = true;//判断多边形是否是凸多边形
+	//  	for (index = 0; index < len; index++)
+	//  	{
+	//  		std::vector<geometry::Point> polygon;
+	//  		polygon = vertice_points;
+	//  		std::vector <geometry::Point>::iterator iter = polygon.begin() + index;
+	//  		polygon.erase(iter);
+	//  		if (IsPointInsidePolygon(vertice_points[index], polygon))
+	//  		{
+	//  			IsCovexPolygon = false;
+	//  			break;
+	//  		}
+	//  		else
+	//  		{
+	//  			covex_index.push_back(index);
+	//  		}
+	//  	}
 
-	 	if (IsCovexPolygon)
-	 		return ConvexPolygonDivide(vertice_points, indexes);
+	//  	if (IsCovexPolygon)
+	//  		return ConvexPolygonDivide(vertice_points, indexes);
 
-	 	//查找可划分顶点
-	 	int can_divide_index = -1;//可划分顶点索引
-	 	for (int i = 0; i < len; i++)
-	 	{
-	 		if (i >= index)
-	 		{
-	 			std::vector<geometry::Point> polygon;
-	 			polygon = vertice_points;
-	 			std::vector <geometry::Point>::iterator iter = polygon.begin() + i;
-	 			polygon.erase(iter);
-	 			if (!IsPointInsidePolygon(vertice_points[i], polygon) && IsCanDivide(i, vertice_points))
-	 			{
-	 				can_divide_index = i;
-	 				break;
-	 			}
-	 		}
-	 		else
-	 		{
+	//  	//查找可划分顶点
+	//  	int can_divide_index = -1;//可划分顶点索引
+	//  	for (int i = 0; i < len; i++)
+	//  	{
+	//  		if (i >= index)
+	//  		{
+	//  			std::vector<geometry::Point> polygon;
+	//  			polygon = vertice_points;
+	//  			std::vector <geometry::Point>::iterator iter = polygon.begin() + i;
+	//  			polygon.erase(iter);
+	//  			if (!IsPointInsidePolygon(vertice_points[i], polygon) && IsCanDivide(i, vertice_points))
+	//  			{
+	//  				can_divide_index = i;
+	//  				break;
+	//  			}
+	//  		}
+	//  		else
+	//  		{
 
-	 			//            if(covex_index.empty()){
-	 			//                can_divide_index = i;
-	 			//                break;
-	 			//            }
-	 			std::vector<int>::iterator result = find(covex_index.begin(), covex_index.end(), i);
-	 			if (*result != -1 && IsCanDivide(i, vertice_points))
-	 			{
-	 				can_divide_index = i;
-	 				break;
-	 			}
-	 		}
-	 	}
+	//  			//            if(covex_index.empty()){
+	//  			//                can_divide_index = i;
+	//  			//                break;
+	//  			//            }
+	//  			std::vector<int>::iterator result = find(covex_index.begin(), covex_index.end(), i);
+	//  			if (*result != -1 && IsCanDivide(i, vertice_points))
+	//  			{
+	//  				can_divide_index = i;
+	//  				break;
+	//  			}
+	//  		}
+	//  	}
 
-	 	if (can_divide_index < 0)
-	 	{
-	 		return {};
-	 	}
+	//  	if (can_divide_index < 0)
+	//  	{
+	//  		return {};
+	//  	}
 
-	 	//用可划分顶点将凹多边形划分为一个三角形和一个多边形
-	 	std::vector<int> Triangles;
-	 	int next = (can_divide_index == len - 1) ? 0 : can_divide_index + 1;
-	 	int pre = (can_divide_index == 0) ? len - 1 : can_divide_index - 1;
-	 	Triangles.push_back(indexes[pre]);
-	 	Triangles.push_back(indexes[can_divide_index]);
-	 	Triangles.push_back(indexes[next]);
-	 	//剔除可划分顶点及索引
-	 	vertice_points.erase(vertice_points.begin() + can_divide_index);
-	 	indexes.erase(indexes.begin() + can_divide_index);
-	 	//递归划分
-	 	std::vector<int> TempTriangles = PolygonTriangleDivide(vertice_points, indexes);
-	 	//	std::cout << vertice_points.size() << std::endl;
+	//  	//用可划分顶点将凹多边形划分为一个三角形和一个多边形
+	//  	std::vector<int> Triangles;
+	//  	int next = (can_divide_index == len - 1) ? 0 : can_divide_index + 1;
+	//  	int pre = (can_divide_index == 0) ? len - 1 : can_divide_index - 1;
+	//  	Triangles.push_back(indexes[pre]);
+	//  	Triangles.push_back(indexes[can_divide_index]);
+	//  	Triangles.push_back(indexes[next]);
+	//  	//剔除可划分顶点及索引
+	//  	vertice_points.erase(vertice_points.begin() + can_divide_index);
+	//  	indexes.erase(indexes.begin() + can_divide_index);
+	//  	//递归划分
+	//  	std::vector<int> TempTriangles = PolygonTriangleDivide(vertice_points, indexes);
+	//  	//	std::cout << vertice_points.size() << std::endl;
 
-	 	Triangles.insert(Triangles.end(), TempTriangles.begin(), TempTriangles.end());
-	 	return Triangles;
-	 }
+	//  	Triangles.insert(Triangles.end(), TempTriangles.begin(), TempTriangles.end());
+	//  	return Triangles;
+	//  }
 		
 
 	//线段相交  跨立实验
