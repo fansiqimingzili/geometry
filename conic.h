@@ -3,6 +3,7 @@
 
 #include "define.h"
 #include "point.h"
+#include "utils.h"
 namespace geometry {
     class Conic{
     public:
@@ -10,11 +11,28 @@ namespace geometry {
         Conic(float ra,float rb,float rotx,int large_arc,int sweep_direction,float x1,float y1,float x2,float y2);
         ~Conic()=default;
 
-        Point ComputeCenterP();
+        float ComputeDistance();
         Point ComputeCenter();
+        float CaculateInitAngle();
         float CaculateDeltaAngle();
-        void  ConicToCubics();
+
+        float GetRadiusA(){
+            return ra_;
+        }
+        float GetRadiusB(){
+            return rb_;
+        }
+
+        float GetRotX(){
+            return rotx_;
+        }
+        Point GetArcEnd(){
+            return Point (x2_,y2_);
+        }
+
     private:
+        Point ComputePointP();
+        Point ComputeCenterP();
         float ra_;
         float rb_;
         float rotx_;

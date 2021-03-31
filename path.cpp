@@ -9,7 +9,7 @@ namespace geometry {
 
 	}
 
-	Path& Path::MakeFromString(const char* d_str) {
+	void Path::MakeFromString(const char* d_str) {
 
 		const char* s = d_str;
 		char cmd = '\0';						//dµÄÊ××Ö·û
@@ -20,9 +20,9 @@ namespace geometry {
 		geometry::Point lastc(0, 0);
 		if (s) {
 			while (*s) {
-				s = parse::Parse::GetNextPathItem(s, item);
+				s = parse::GetNextPathItem(s, item);
 				if (!*item) break;
-				if (cmd != '\0' && parse::Parse::IsCoordinate(item)) {
+				if (cmd != '\0' && parse::IsCoordinate(item)) {
 
 					arg.push_back((float)atof(item));
 
@@ -43,7 +43,6 @@ namespace geometry {
 			if (!FromSVGString(cmd, arg, cnum, c, lastc))
 				return;
 		}
-		return *this;
 	}
 
 	Path& Path::MakeRect(float x,float y,float width,float height,float rx,float ry) {
@@ -53,6 +52,7 @@ namespace geometry {
 			LineTo(x + width, y);
 			LineTo(x + width, y + height);
 			LineTo(x, y + height);
+			CloseTo();
 		}
 		else {
 			// Rounded rectangle
@@ -65,6 +65,7 @@ namespace geometry {
 			CubicBeizerTo(x + rx * (1 - KAPPA90), y + height, x, y + height - ry * (1 - KAPPA90), x, y + height - ry);
 			LineTo(x, y + ry);
 			CubicBeizerTo(x, y + ry * (1 - KAPPA90), x + rx * (1 - KAPPA90), y, x + rx, y);
+			CloseTo();
 		}
 		return *this;
 	}
@@ -76,6 +77,7 @@ namespace geometry {
 		CubicBeizerTo(cx - ra * KAPPA90, cy + rb, cx - ra, cy + rb * KAPPA90, cx - ra, cy);
 		CubicBeizerTo(cx - ra, cy - rb * KAPPA90, cx - ra * KAPPA90, cy - rb, cx, cy - rb);
 		CubicBeizerTo(cx + ra * KAPPA90, cy - rb, cx + ra, cy - rb * KAPPA90, cx + ra, cy);
+		CloseTo();
 		return *this;
 	}
 
@@ -86,6 +88,7 @@ namespace geometry {
 		CubicBeizerTo(center_x - radius * KAPPA90, center_y + radius, center_x - radius, center_y + radius * KAPPA90, center_x - radius, center_y);
 		CubicBeizerTo(center_x - radius, center_y - radius * KAPPA90, center_x - radius * KAPPA90, center_y - radius, center_x, center_y - radius);
 		CubicBeizerTo(center_x + radius * KAPPA90, center_y - radius, center_x + radius, center_y - radius * KAPPA90, center_x + radius, center_y);
+		CloseTo();
 		return *this;
 	}
 
@@ -102,25 +105,36 @@ namespace geometry {
 		float error_squared = acceptable_error * acceptable_error;
 		auto iter = verbs_.cbegin();
 		auto data_iter = data_.cbegin();
-		points[0] = *data_iter;
+		Point lastc;
+		//points[0] = *data_iter;
 		for (; iter != verbs_.cend(); iter++) {
-			int cnum = GetNumPerElement(*iter);
-			for (int i = 0; i <=cnum; i++) {
-				if (*iter == PathVerb::kMove)
-					break;
-				points[i] = *data_iter++;
-			}
+			int cnum = GetNumPerVerb(*iter);
 			if (*iter == PathVerb::kMove) {
-				points[0] = *data_iter;
-				continue;
+				points[0] = data_iter[0];
+				lastc = points[0];
 			}
-			data_iter--;
+			else {
+				points[0] = lastc;
+				for (int i = 1; i <=cnum; i++) {
+					//if (*iter == PathVerb::kMove)
+					//	break;
+					points[i] = data_iter[i-1];
+					lastc = points[i];
+				}
+			}
+			data_iter += cnum;
+			//if (*iter == PathVerb::kMove) {
+			//	points[0] = *data_iter;
+			//	continue;
+			//}
+			//data_iter--;
+
 			CreateVerbSegments(*iter,points, segment_points, error_squared);
 		}
 		if (segment_points.empty()) {
 			int numVerbs = this->GetVerbCounts();
 			if (numVerbs == 1) {
-				AddMove(segment_points, this->GetPoint(0));
+				AddMove(segment_points, this->GetPointAt(0));
 			}
 			else {
 				// Invalid or empty path. Fall back to point(0,0)
@@ -139,25 +153,25 @@ namespace geometry {
 			bounds.SetLTRB(data_[0].X(), data_[0].Y(), data_[0].X(), data_[0].Y());
 
 		geometry::Point lastc(data_[0].X(), data_[0].Y());
-		int data_index = 1;
-		for (int index = 1; index < GetVerbCounts();index++) {
-			switch (verbs_[index]) {
+		auto index =verbs_.begin()+1;
+		auto pts =data_.begin()+1;
+		while (index!=verbs_.end()) {
+			switch (*index) {
 			case PathVerb::kMove:
 			case PathVerb::kLine:
-				bounds.ExpandBounds(data_[data_index]);
-				lastc = data_[data_index];
-				data_index = data_index + 1;
+				bounds.ExpandBounds(pts[0]);
+				lastc = pts[0];
 				break;
 			case PathVerb::kCubic:
 			{
 				// Bezier end point
-				bounds.ExpandBounds(data_[data_index + 2]);
+				bounds.ExpandBounds(pts[2]);
 				// Extremities
 				Point point[4];
 				point[0] = lastc;
-				point[1] = data_[data_index];
-				point[2] = data_[data_index + 1];
-				point[3] = data_[data_index + 2];
+				point[1] = pts[0];
+				point[2] = pts[1];
+				point[3] = pts[2];
 
 				const float a = 3.0f * (-point[0].X() + 3.0f * (point[1].X() - point[2].X()) + point[3].X());
 				const float b = 6.0f * (point[0].X() - 2.0f * point[1].X() + point[2].X());
@@ -186,19 +200,18 @@ namespace geometry {
 					}
 				}
 
-				lastc = data_[data_index + 2];
-				data_index = data_index + 3;
+				lastc = pts[2];
 			}
 			break;
 			case PathVerb::kQuad:
 			{
 				// Bezier end point
-				bounds.ExpandBounds(data_[data_index + 1]);
+				bounds.ExpandBounds(pts[1]);
 				// Extremities
 				Point point[4];
 				point[0] = lastc;
-				point[1] = data_[data_index];
-				point[2] = data_[data_index + 1];
+				point[1] = pts[0];
+				point[2] = pts[1];
 
 				const float a = point[2].X() - point[1].X();
 				const float b = point[1].X() - point[0].X();
@@ -215,15 +228,17 @@ namespace geometry {
 							bounds.ExpandBounds(pos);
 						}
 					}
-				lastc = data_[data_index + 1];
+				lastc = pts[1];
 				break;
 			}
 			case PathVerb::kClose:
-				// Noop
 				break;
 			default:
 				break;
 			}
+			PathVerb v = *index;
+			pts += GetNumPerVerb(v);
+			index++;
 		}
 		return bounds;
 	}
@@ -233,7 +248,7 @@ namespace geometry {
 		data_ = path.data_;
 	}
 
-	void Path::MoveTo(Point& pt) {
+	void Path::MoveTo(const Point& pt) {
 		this->MoveTo(pt.X(), pt.Y());
 	}
 
@@ -243,7 +258,7 @@ namespace geometry {
 		data_.push_back(pt);
 	}
 
-	void Path::LineTo(Point& pt) {
+	void Path::LineTo(const Point& pt) {
 		this->LineTo(pt.X(), pt.Y());
 	}
 
@@ -253,9 +268,10 @@ namespace geometry {
 		data_.push_back(pt);
 	}
 
-	void Path::CubicBeizerTo(Point& cp1, Point& cp2, Point& pt) {
+	void Path::CubicBeizerTo(const Point& cp1,const Point& cp2,const Point& pt) {
 		this->CubicBeizerTo(cp1.X(), cp1.Y(), cp2.X(), cp2.Y(), pt.X(), pt.Y());
 	}
+
 	void Path::CubicBeizerTo(float cp1x, float cp1y, float cp2x, float cp2y, float x, float y) {
 		Point cp1(cp1x, cp1y), cp2(cp2x, cp2y), p(x, y);
 		verbs_.push_back(PathVerb::kCubic);
@@ -264,7 +280,7 @@ namespace geometry {
 		data_.push_back(p);
 	}
 
-	void Path::QuadBeizierTo(Point& cp, Point& pt) {
+	void Path::QuadBeizierTo(const Point& cp,const Point& pt) {
 		this->QuadBeizierTo(cp.X(), cp.Y(), pt.X(), pt.Y());
 	}
 
@@ -280,122 +296,158 @@ namespace geometry {
 		this->ArcTo(radiusx, radiusy, rot_x, large_arc, sweep_flag, pt.X(), pt.Y());
 
 	}
-	void Path::ArcTo(float radiusx, float radiusy, float rot_x, float large_arc, float sweep_flag, float endx, float endy) {
 
-		float rx = fabsf(radiusx);				// y radius
-		float ry = fabsf(radiusy);				// x radius
-		float rotx = rot_x / 180.0f * PI;		// x rotation angle
-		int fa = fabsf(large_arc) > 1e-6 ? 1 : 0;	// Large arc
-		int fs = fabsf(sweep_flag) > 1e-6 ? 1 : 0;	// Sweep direction
-		float x1 = data_.back().X();							// start point
-		float y1 = data_.back().Y();
-		float x2 = endx;
-		float y2 = endy;
+	 void Path::ArcTo(float radiusx, float radiusy, float rot_x, float large_arc, float sweep_flag, float endx, float endy) {
+
+	 	float rx = fabsf(radiusx);				// y radius
+	 	float ry = fabsf(radiusy);				// x radius
+	 	float rotx = rot_x / 180.0f * PI;		// x rotation angle
+	 	int fa = fabsf(large_arc) > 1e-6 ? 1 : 0;	// Large arc
+	 	int fs = fabsf(sweep_flag) > 1e-6 ? 1 : 0;	// Sweep direction
+	 	float x1 = data_.back().X();							// start point
+	 	float y1 = data_.back().Y();
+	 	float x2 = endx;
+	 	float y2 = endy;
 
 
-		float dx = x1 - x2;
-		float dy = y1 - y2;
-		float d = sqrtf(dx * dx + dy * dy);
-		if (d < 1e-6f || rx < 1e-6f || ry < 1e-6f) {
-			// The arc degenerates to a line
-			LineTo(x2, y2);
-		}
+	 	float dx = x1 - x2;
+	 	float dy = y1 - y2;
+	 	float d = sqrtf(dx * dx + dy * dy);
+	 	if (d < 1e-6f || rx < 1e-6f || ry < 1e-6f) {
+	 		// The arc degenerates to a line
+	 		LineTo(x2, y2);
+	 	}
 
-		float sinrx = sinf(rotx);
-		float cosrx = cosf(rotx);
+	 	float sinrx = sinf(rotx);
+	 	float cosrx = cosf(rotx);
 
-		// Convert to center point parameterization.
-		// http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes
-		// 1) Compute x1', y1'
-		float x1p = cosrx * dx / 2.0f + sinrx * dy / 2.0f;
-		float y1p = -sinrx * dx / 2.0f + cosrx * dy / 2.0f;
-		d = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
-		if (d > 1) {
-			d = sqrtf(d);
-			rx *= d;
-			ry *= d;
-		}
-		// 2) Compute cx', cy'
-		float s = 0.0f;
-		float sa = (rx * rx) * (ry * ry) - (rx * rx) * (y1p * y1p) - (ry * ry) * (x1p * x1p);
-		float sb = (rx * rx) * (y1p * y1p) + (ry * ry) * (x1p * x1p);
-		if (sa < 0.0f) sa = 0.0f;
-		if (sb > 0.0f)
-			s = sqrtf(sa / sb);
-		if (fa == fs)
-			s = -s;
-		float cxp = s * rx * y1p / ry;
-		float cyp = s * -ry * x1p / rx;
+	 	// Convert to center point parameterization.
+	 	// http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes
+	 	// 1) Compute x1', y1'
+	 	float x1p = cosrx * dx / 2.0f + sinrx * dy / 2.0f;
+	 	float y1p = -sinrx * dx / 2.0f + cosrx * dy / 2.0f;
+	 	d = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+	 	if (d > 1) {
+	 		d = sqrtf(d);
+	 		rx *= d;
+	 		ry *= d;
+	 	}
+	 	// 2) Compute cx', cy'
+	 	float s = 0.0f;
+	 	float sa = (rx * rx) * (ry * ry) - (rx * rx) * (y1p * y1p) - (ry * ry) * (x1p * x1p);
+	 	float sb = (rx * rx) * (y1p * y1p) + (ry * ry) * (x1p * x1p);
+	 	if (sa < 0.0f) sa = 0.0f;
+	 	if (sb > 0.0f)
+	 		s = sqrtf(sa / sb);
+	 	if (fa == fs)
+	 		s = -s;
+	 	float cxp = s * rx * y1p / ry;
+	 	float cyp = s * -ry * x1p / rx;
 
-		// 3) Compute cx,cy from cx',cy'
-		float cx = (x1 + x2) / 2.0f + cosrx * cxp - sinrx * cyp;
-		float cy = (y1 + y2) / 2.0f + sinrx * cxp + cosrx * cyp;
+	 	// 3) Compute cx,cy from cx',cy'
+	 	float cx = (x1 + x2) / 2.0f + cosrx * cxp - sinrx * cyp;
+	 	float cy = (y1 + y2) / 2.0f + sinrx * cxp + cosrx * cyp;
 
-		// 4) Calculate theta1, and delta theta.
-		float ux = (x1p - cxp) / rx;
-		float uy = (y1p - cyp) / ry;
-		float vx = (-x1p - cxp) / rx;
-		float vy = (-y1p - cyp) / ry;
-		float a1 = VecAngle(1.0f, 0.0f, ux, uy);	// Initial angle
-		float da = VecAngle(ux, uy, vx, vy);		// Delta angle
+	 	// 4) Calculate theta1, and delta theta.
+	 	float ux = (x1p - cxp) / rx;
+	 	float uy = (y1p - cyp) / ry;
+	 	float vx = (-x1p - cxp) / rx;
+	 	float vy = (-y1p - cyp) / ry;
+	 	float a1 = VecAngle(1.0f, 0.0f, ux, uy);	// Initial angle
+	 	float da = VecAngle(ux, uy, vx, vy);		// Delta angle
 
-	//	if (vecrat(ux,uy,vx,vy) <= -1.0f) da = NSVG_PI;
-	//	if (vecrat(ux,uy,vx,vy) >= 1.0f) da = 0;
+	 //	if (vecrat(ux,uy,vx,vy) <= -1.0f) da = NSVG_PI;
+	 //	if (vecrat(ux,uy,vx,vy) >= 1.0f) da = 0;
 
-		if (fs == 0 && da > 0)
-			da -= 2 * PI;
-		else if (fs == 1 && da < 0)
-			da += 2 * PI;
+	 	if (fs == 0 && da > 0)
+	 		da -= 2 * PI;
+	 	else if (fs == 1 && da < 0)
+	 		da += 2 * PI;
 
-		// Approximate the arc using cubic spline segments.
-		float t[6];
-		t[0] = cosrx; t[1] = sinrx;
-		t[2] = -sinrx; t[3] = cosrx;
-		t[4] = cx; t[5] = cy;
+	 	// Approximate the arc using cubic spline segments.
+	 	float t[6];
+	 	t[0] = cosrx; t[1] = sinrx;
+	 	t[2] = -sinrx; t[3] = cosrx;
+	 	t[4] = cx; t[5] = cy;
 
-		// Split arc into max 90 degree segments.
-		// The loop assumes an iteration per end point (including start and end), this +1.
-		int ndivs = (int)(fabsf(da) / (PI * 0.5f) + 1.0f);
-		float hda = (da / (float)ndivs) / 2.0f;
-		float kappa = fabsf(4.0f / 3.0f * (1.0f - cosf(hda)) / sinf(hda));
-		if (da < 0.0f)
-			kappa = -kappa;
+	 	// Split arc into max 90 degree segments.
+	 	// The loop assumes an iteration per end point (including start and end), this +1.
+	 	int ndivs = (int)(fabsf(da) / (PI * 0.5f) + 1.0f);
+	 	float hda = (da / (float)ndivs) / 2.0f;
+	 	float kappa = fabsf(4.0f / 3.0f * (1.0f - cosf(hda)) / sinf(hda));
+	 	if (da < 0.0f)
+	 		kappa = -kappa;
 
-		float px = 0.0f;
-		float py = 0.0f;
-		float ptanx = 0.0f;
-		float ptany = 0.0f;
+	 	float px = 0.0f;
+	 	float py = 0.0f;
+	 	float ptanx = 0.0f;
+	 	float ptany = 0.0f;
 
-		for (int i = 0; i <= ndivs; i++) {
-			float a = a1 + da * ((float)i / (float)ndivs);
-			dx = cosf(a);
-			dy = sinf(a);
+	 	for (int i = 0; i <= ndivs; i++) {
+	 		float a = a1 + da * ((float)i / (float)ndivs);
+	 		dx = cosf(a);
+	 		dy = sinf(a);
 
-			const float dxrx = dx * rx;
-			const float dyry = dy * ry;
-			const float x = dxrx * t[0] + dyry * t[2] + t[4];
-			const float y = dxrx * t[1] + dyry * t[3] + t[5];
+	 		const float dxrx = dx * rx;
+	 		const float dyry = dy * ry;
+	 		const float x = dxrx * t[0] + dyry * t[2] + t[4];
+	 		const float y = dxrx * t[1] + dyry * t[3] + t[5];
 
-			const float dyrxkappa = dy * rx * kappa;
-			const float dxrykappa = dx * ry * kappa;
+	 		const float dyrxkappa = dy * rx * kappa;
+	 		const float dxrykappa = dx * ry * kappa;
 
-			const float tanx = dxrykappa * t[2] - dyrxkappa * t[0];
-			const float tany = dxrykappa * t[3] - dyrxkappa * t[1];
+	 		const float tanx = dxrykappa * t[2] - dyrxkappa * t[0];
+	 		const float tany = dxrykappa * t[3] - dyrxkappa * t[1];
 
-			if (i > 0) {
-				CubicBeizerTo(px + ptanx, py + ptany, x - tanx, y - tany, x, y);
-			}
+	 		if (i > 0) {
+	 			CubicBeizerTo(px + ptanx, py + ptany, x - tanx, y - tany, x, y);
+	 		}
 
-			px = x;
-			py = y;
-			ptanx = tanx;
-			ptany = tany;
-		}
-	}
+	 		px = x;
+	 		py = y;
+	 		ptanx = tanx;
+	 		ptany = tany;
+	 	}
+	 }
 
 	void Path::CloseTo() {
 		verbs_.push_back(PathVerb::kClose);
 		data_.push_back(data_[0]);
+	}
+
+	Path& Path::ReversePathTo(const Path&other){
+		if (other.GetVerbCounts()== 0) {
+			return *this;
+		}
+		std::vector<PathVerb> verb = other.GetVerbs();
+		std::vector<Point> data = other.GetPoints();
+		auto verb_iter = verb.end();
+		auto verb_begin = verb.begin();
+		auto pts = data.end();
+
+		while (verb_iter > verb_begin) {
+		PathVerb v = *--verb_iter;
+		pts -= GetNumPerVerb(v);
+			switch (v) {
+			case PathVerb::kMove:
+				// if the path has multiple contours, stop after reversing the last
+				return *this;
+			case PathVerb::kLine:
+				this->LineTo(pts[0]);
+				break;
+			case PathVerb::kQuad:
+				this->QuadBeizierTo(pts[1], pts[0]);
+				break;
+			case PathVerb::kCubic:
+				this->CubicBeizerTo(pts[2], pts[1], pts[0]);
+				break;
+			case PathVerb::kClose:
+				break;
+			default:
+				break;
+			}
+		}
+		return *this;
 	}
 
 	bool Path::FromSVGString(char cmd, std::vector<float>& data, int cnum, Point& c, Point& lastc) {
@@ -752,7 +804,7 @@ namespace geometry {
 		return -1;
 	}
 
-	int Path::GetNumPerElement(PathVerb verb) {
+	int Path::GetNumPerVerb(PathVerb verb) const{
 		switch (verb) {
 		case PathVerb::kMove:
 		case PathVerb::kLine:

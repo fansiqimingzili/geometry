@@ -82,12 +82,21 @@ namespace geometry {
             x_+= x;
             y_ += y;
         }
+        
+        float Length(){
+             float lensq = x_ * x_ + y_ * y_;
+             return sqrt(lensq);
+        }
+
+        Point Normal() {
+            return Point(y_,-x_);
+        }
 
         //gui yi
         Point& Normalize() {
-            float lensq = x_ * x_ + y_ * y_;
-            if (lensq > 0.0f) {
-                float one_over_len = 1.0f / sqrt(lensq);
+            float len=Length();
+            if (len > 0.0f) {
+                float one_over_len = 1.0f / len;
                 x_ *= one_over_len;
                 y_ *= one_over_len;
             }

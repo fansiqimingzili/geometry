@@ -98,6 +98,8 @@ namespace geometry {
 
         static bool Intersects(const Rect& a, const Rect& b);
 
+        Rect Union(const Rect& r)const;
+
         bool ContainsPoint(float x, float y) const;
 
         bool Contains(const Rect& r) const;

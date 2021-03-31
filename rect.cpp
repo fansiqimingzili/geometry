@@ -143,6 +143,21 @@ namespace geometry {
             b.left_, b.top_, b.right_, b.bottom_);
     }
 
+    Rect  Rect::Union(const Rect& r)const {
+        if (this->IsEmpty()||r.IsEmpty()) {
+            return Rect();
+        }
+        
+        float left= std::min(left_, r.GetLeft());
+        float top= std::min(top_, r.GetTop());
+        float right= std::max(right_, r.GetRight());
+        float bottom= std::max(bottom_, r.GetBottom());
+        if (left >= right && bottom >= top) {
+            return Rect();
+        }
+        return Rect(left, top, right, bottom);
+    }
+
     bool  Rect::ContainsPoint(float x, float y) const {
         return x >= left_ && x < right_&& y >= top_ && y < bottom_;
     }
