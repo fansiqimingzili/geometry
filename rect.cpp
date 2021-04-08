@@ -165,8 +165,8 @@ namespace geometry {
     bool  Rect::Contains(const Rect& r) const {
         // todo: can we eliminate the this->isEmpty check?
         return !r.IsEmpty() && !this->IsEmpty() &&
-            left_ <= r.left_ && top_ <= r.top_ &&
-            right_ >= r.right_ && bottom_ >= r.bottom_;
+            left_ <= r.left_ && top_ >=r.top_ &&
+            right_ >= r.right_ && bottom_ <= r.bottom_;
     }
 
     void  Rect::Sort() {

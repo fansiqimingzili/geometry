@@ -99,7 +99,7 @@ namespace geometry {
 		return *this;
 	}
 
-	std::vector<Point> Path::Approximate(float acceptable_error) {
+	std::vector<Point> Path::Approximate(float acceptable_error){
 		Point points[4];
 		std::vector<Point> segment_points;
 		float error_squared = acceptable_error * acceptable_error;
@@ -134,7 +134,7 @@ namespace geometry {
 		if (segment_points.empty()) {
 			int numVerbs = this->GetVerbCounts();
 			if (numVerbs == 1) {
-				AddMove(segment_points, this->GetPointAt(0));
+				AddMove(segment_points, data_[0]);
 			}
 			else {
 				// Invalid or empty path. Fall back to point(0,0)
@@ -421,12 +421,11 @@ namespace geometry {
 		}
 		std::vector<PathVerb> verb = other.GetVerbs();
 		std::vector<Point> data = other.GetPoints();
-		auto verb_iter = verb.end();
+		auto verb_iter = verb.end()-1;
 		auto verb_begin = verb.begin();
-		auto pts = data.end();
-
+		auto pts = data.end()-1;
 		while (verb_iter > verb_begin) {
-		PathVerb v = *--verb_iter;
+		PathVerb v = *verb_iter--;
 		pts -= GetNumPerVerb(v);
 			switch (v) {
 			case PathVerb::kMove:

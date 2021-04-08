@@ -68,7 +68,7 @@ namespace geometry {
 
 		Path& ReversePathTo(const Path&other);
 
-		bool IsEmpty() {
+		bool IsEmpty() const{
 			if (GetVerbCounts()== 0)
 				return true;
 		}
@@ -86,7 +86,7 @@ namespace geometry {
 			return verbs_[index];
 		}
 
-		Point GetPointAt(int index) {
+		Point GetPointAt(int index){
 			int size = data_.size();
 			return data_[index];
 		}
